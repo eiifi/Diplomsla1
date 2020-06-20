@@ -35,7 +35,7 @@ struct protein
     int proteinSmer[maxLenProtein];
     bool proteinVrsta[maxLenProtein];
     struct tocka tocke [maxLenProtein];
-    int hevristika;
+    int hevristika = 0;
 };
 
 __global__ void addKernel(int *c, struct protein* Arr)
@@ -54,7 +54,7 @@ bool enako(struct protein ena, struct protein dva) {
     return true;
 }
 
-void tvori_mrezo(struct protein prot) {
+void tvori_mrezo(struct protein &prot) {
     for (int i = 0; i < maxLenProtein; i++) {
         struct tocka t;
         if (i != 0) {
@@ -82,6 +82,7 @@ void tvori_mrezo(struct protein prot) {
         }
         if (prot.proteinSmer[i] == levo) {
             t.y++;
+            prot.tocke[i] = t;
         }
         if (prot.proteinSmer[i] == desno) {
             t.y--;
@@ -90,8 +91,49 @@ void tvori_mrezo(struct protein prot) {
     }
 }
 
-void doloci_hevristiko(struct protein prot) {
+bool cikelj(struct tocka a, struct tocka b) {
+    if (a.x == b.x && a.y == b.y && a.z == b.z) {
+        return true;
+    }
+    return false;
+}
 
+bool hevristicna_povezava(struct tocka a, struct tocka b) {
+
+    if (a.x == b.x && a.y == b.y && (a.z == b.z + 1 || a.z == b.z - 1)) {
+        return true;
+    }
+    if (a.x == b.x && a.z == b.z && (a.y == b.y + 1 || a.y == b.y - 1)) {
+        return true;
+    }
+    if (a.z == b.z && a.y == b.y && (a.x == b.x + 1 || a.x == b.x - 1)) {
+        return true;
+    }
+    return false;
+}
+
+void doloci_hevristiko(struct protein &prot) {
+    int br = 0;
+    for (int i = 0; i < maxLenProtein-3; i++) {
+
+        if (br == 1) {
+            break;
+        }
+
+        for (int j = i+3; j < maxLenProtein; j++) {
+            if (cikelj(prot.tocke[i], prot.tocke[j])) {
+                prot.hevristika = INT_MAX;
+                br = 1;
+            }
+            if (br == 1) {
+                break;
+            }
+
+            if (hevristicna_povezava(prot.tocke[i], prot.tocke[j])) {
+                prot.hevristika++;
+            }
+        }
+    }
 }
 
 int main()
@@ -103,9 +145,10 @@ int main()
     for (unsigned int i = 0; i < numProtein; i++) {
         struct protein generiranProtein;
         //generiranProtein.dolzinaProteina = rand() %(maxLenProtein - minLenProtein) + minLenProtein;
-
+        int prev = 20;
         for (unsigned int j = 0; j < generiranProtein.dolzinaProteina; j++) {
-            generiranProtein.proteinSmer[j] = rand() % 6;
+            while (prev == (generiranProtein.proteinSmer[j] = rand() % 6));
+            prev = generiranProtein.proteinSmer[j];
             generiranProtein.proteinVrsta[j] = rand() % 2;
         }
         arr1[i] = generiranProtein;
