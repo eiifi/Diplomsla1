@@ -21,6 +21,7 @@ cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
 
 //nikamor je namjnen zgolj prvemu clenu
 enum smer{naprej, nazaj, gor, dol, levo, desno, nikamor};
+enum smerobratno{nazaj, naprej, dol, gor, desno, levo, nikamor};
 enum vrsta{H, P};
 
 struct tocka {
@@ -34,6 +35,7 @@ struct protein
     int dolzinaProteina = maxLenProtein;
     int proteinSmer[maxLenProtein];
     bool proteinVrsta[maxLenProtein];
+// uporabi hash table unorderd set
     struct tocka tocke [maxLenProtein];
     int hevristika = 0;
 };
@@ -109,6 +111,7 @@ bool hevristicna_povezava(struct tocka a, struct tocka b) {
     if (a.z == b.z && a.y == b.y && (a.x == b.x + 1 || a.x == b.x - 1)) {
         return true;
     }
+    //preverjat za nazaj povezave
     return false;
 }
 
@@ -123,6 +126,7 @@ void doloci_hevristiko(struct protein &prot) {
         for (int j = i+3; j < maxLenProtein; j++) {
             if (cikelj(prot.tocke[i], prot.tocke[j])) {
                 prot.hevristika = INT_MAX;
+                // v primeru cikla minus dolzina proteina
                 br = 1;
             }
             if (br == 1) {
@@ -138,7 +142,8 @@ void doloci_hevristiko(struct protein &prot) {
 
 int main()
 {
-    
+    // dolzina proteina 5 - 256
+
     //struct protein *arr = new struct protein[numProtein];
     struct protein arr1[numProtein];
     srand(time(NULL));
@@ -147,7 +152,12 @@ int main()
         //generiranProtein.dolzinaProteina = rand() %(maxLenProtein - minLenProtein) + minLenProtein;
         int prev = 20;
         for (unsigned int j = 0; j < generiranProtein.dolzinaProteina; j++) {
-            while (prev == (generiranProtein.proteinSmer[j] = rand() % 6));
+            bool running = true;
+            while (true) {
+                generiranProtein.proteinSmer[j] = rand() % 6;
+                if(prev == )
+                prev = generiranProtein.proteinSmer[j] = rand() % 6;
+            }
             prev = generiranProtein.proteinSmer[j];
             generiranProtein.proteinVrsta[j] = rand() % 2;
         }
@@ -155,70 +165,75 @@ int main()
     }
 
     arr1[0].proteinSmer[0] = 6;
- 
-    for (int i = 0; i < numProtein; i++) {
+    while (true) {
+        for (int i = 0; i < numProtein; i++) {
 
-        // KRIZANJE
-        int r1 = rand() % numProtein;
+            // KRIZANJE
+            int r1 = rand() % numProtein;
 
-        while (r1 == i)
-        {
-            r1 = rand() % numProtein;
-        }
-
-        struct protein generiranProtein1;
-        struct protein generiranProtein2;
-
-        int crosoverPoint = rand() % 10;
-
-        for (int j = 0; j < maxLenProtein; j++)
-        {
-            if (crosoverPoint < j )
+            while (r1 == i)
             {
-                generiranProtein1.proteinSmer[j] = arr1[i].proteinSmer[j];
-                generiranProtein1.proteinVrsta[j] = arr1[i].proteinVrsta[j];
-                generiranProtein2.proteinSmer[j] = arr1[r1].proteinSmer[j];
-                generiranProtein2.proteinVrsta[j] = arr1[r1].proteinVrsta[j];
+                r1 = rand() % numProtein;
+            }
 
+            struct protein generiranProtein1;
+            struct protein generiranProtein2;
+
+            int crosoverPoint = rand() % 10;
+
+            for (int j = 0; j < maxLenProtein; j++)
+            {
+                if (crosoverPoint < j)
+                {
+                    // memory copy std::copy
+                    generiranProtein1.proteinSmer[j] = arr1[i].proteinSmer[j];
+                    generiranProtein1.proteinVrsta[j] = arr1[i].proteinVrsta[j];
+                    generiranProtein2.proteinSmer[j] = arr1[r1].proteinSmer[j];
+                    generiranProtein2.proteinVrsta[j] = arr1[r1].proteinVrsta[j];
+
+                }
+                else {
+                    generiranProtein1.proteinSmer[j] = arr1[r1].proteinSmer[j];
+                    generiranProtein1.proteinVrsta[j] = arr1[r1].proteinVrsta[j];
+                    generiranProtein2.proteinSmer[j] = arr1[i].proteinSmer[j];
+                    generiranProtein2.proteinVrsta[j] = arr1[i].proteinVrsta[j];
+                }
             }
-            else {
-                generiranProtein1.proteinSmer[j] = arr1[r1].proteinSmer[j];
-                generiranProtein1.proteinVrsta[j] = arr1[r1].proteinVrsta[j];
-                generiranProtein2.proteinSmer[j] = arr1[i].proteinSmer[j];
-                generiranProtein2.proteinVrsta[j] = arr1[i].proteinVrsta[j];
+
+            if (enako(generiranProtein1, arr1[i]) || enako(generiranProtein1, arr1[r1]) || rand() % 100 < 1) {
+                int tockaObrta1 = rand() % maxLenProtein;
+                int tockaObrta2 = rand() % maxLenProtein;
+                while (tockaObrta1 == tockaObrta2) {
+                    tockaObrta2 = rand() % maxLenProtein;
+                }
+                // generiram 3-5 smeri in jih nastavim nakljuèno po proteinu
+                int temp = generiranProtein1.proteinSmer[tockaObrta1];
+                generiranProtein1.proteinSmer[tockaObrta1] = generiranProtein1.proteinSmer[tockaObrta2];
+                generiranProtein1.proteinSmer[tockaObrta2] = temp;
             }
+            if (enako(generiranProtein2, arr1[i]) || enako(generiranProtein2, arr1[r1]) || rand() % 100 < 1) {
+                int tockaObrta1 = rand() % maxLenProtein;
+                int tockaObrta2 = rand() % maxLenProtein;
+                while (tockaObrta1 == tockaObrta2) {
+                    tockaObrta2 = rand() % maxLenProtein;
+                }
+                int temp = generiranProtein1.proteinSmer[tockaObrta1];
+                generiranProtein1.proteinSmer[tockaObrta1] = generiranProtein1.proteinSmer[tockaObrta2];
+                generiranProtein1.proteinSmer[tockaObrta2] = temp;
+            }
+
+            tvori_mrezo(generiranProtein1);
+            tvori_mrezo(generiranProtein2);
+            tvori_mrezo(arr1[i]);
+
+            doloci_hevristiko(generiranProtein1);
+            doloci_hevristiko(generiranProtein2);
+            doloci_hevristiko(arr1[i]);
+
+
         }
-        if (enako(generiranProtein1, arr1[i]) || enako(generiranProtein1, arr1[r1]) || rand() % 100 < 1) {
-            int tockaObrta1 = rand() % maxLenProtein;
-            int tockaObrta2 = rand() % maxLenProtein;
-            while (tockaObrta1 == tockaObrta2) {
-                tockaObrta2 = rand() % maxLenProtein;
-            }
-            int temp = generiranProtein1.proteinSmer[tockaObrta1];
-            generiranProtein1.proteinSmer[tockaObrta1] = generiranProtein1.proteinSmer[tockaObrta2];
-            generiranProtein1.proteinSmer[tockaObrta2] = temp;
-        }
-        if (enako(generiranProtein2, arr1[i]) || enako(generiranProtein2, arr1[r1]) || rand() % 100 < 1) {
-            int tockaObrta1 = rand() % maxLenProtein;
-            int tockaObrta2 = rand() % maxLenProtein;
-            while (tockaObrta1 == tockaObrta2) {
-                tockaObrta2 = rand() % maxLenProtein;
-            }
-            int temp = generiranProtein1.proteinSmer[tockaObrta1];
-            generiranProtein1.proteinSmer[tockaObrta1] = generiranProtein1.proteinSmer[tockaObrta2];
-            generiranProtein1.proteinSmer[tockaObrta2] = temp;
-        }
-
-        tvori_mrezo(generiranProtein1);
-        tvori_mrezo(generiranProtein2);
-        tvori_mrezo(arr1[i]);
-
-        doloci_hevristiko(generiranProtein1);
-        doloci_hevristiko(generiranProtein2);
-        doloci_hevristiko(arr1[i]);
-
-
-    }
+ }
+   
 
 
 
